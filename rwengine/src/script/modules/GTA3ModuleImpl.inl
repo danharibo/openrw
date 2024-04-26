@@ -7192,18 +7192,32 @@ bool opcode_02b2(const ScriptArguments& args, const ScriptPlayer player, const S
     @arg arg9 
 */
 bool opcode_02b3(const ScriptArguments& args, const ScriptPlayer player, const ScriptFloat arg2, const ScriptFloat arg3, const ScriptFloat arg4, const ScriptFloat arg5, const ScriptFloat arg6, const ScriptFloat arg7, const ScriptFloat arg8, const ScriptInt arg9) {
-    RW_UNIMPLEMENTED_OPCODE(0x02b3);
-    RW_UNUSED(player);
-    RW_UNUSED(arg2);
-    RW_UNUSED(arg3);
-    RW_UNUSED(arg4);
-    RW_UNUSED(arg5);
-    RW_UNUSED(arg6);
-    RW_UNUSED(arg7);
-    RW_UNUSED(arg8);
-    RW_UNUSED(arg9);
     RW_UNUSED(args);
-    return false;
+    bool inArea;
+
+    if (arg9) {
+        RW_UNIMPLEMENTED("02B3: in_cube sphere");
+        inArea = false;
+    } else {
+        const glm::vec3& p = player.get()->getCharacter()->getPosition();
+
+        float angle = std::atan2(arg3 - arg6, arg5 - arg2);
+        float x = arg8 * std::cos(angle);
+        float y = arg8 * std::sin(angle);
+
+        glm::vec2 AB = glm::vec2(arg2 - (arg2 - x), arg3 - (arg3 - y));
+        glm::vec2 AM = glm::vec2(arg2 - p.x, arg3 - p.y);
+        glm::vec2 BC = glm::vec2((arg2 - x) - (arg5 - x), (arg3 - y) - (arg6 - y));
+        glm::vec2 BM = glm::vec2(arg2 - p.x, arg3 - p.y);
+        float dotABAM = glm::dot(AB, AM);
+        float dotBCBM = glm::dot(BC, BM);
+
+        inArea = (p.z >= arg4 && p.z <= arg7 &&
+                  0 < dotABAM && dotABAM < glm::dot(AB, AB) &&
+                  0 < dotBCBM && dotBCBM < glm::dot(BC, BC));
+    }
+
+    return inArea;
 }
 
 /**
@@ -9317,15 +9331,35 @@ bool opcode_034d(const ScriptArguments& args, const ScriptObject object, const S
     @arg arg8 Boolean true/false
 */
 bool opcode_034e(const ScriptArguments& args, const ScriptObject object, ScriptVec3 coord, const ScriptFloat arg5, const ScriptFloat arg6, const ScriptFloat arg7, const ScriptBoolean arg8) {
-    RW_UNIMPLEMENTED_OPCODE(0x034e);
-    RW_UNUSED(object);
-    RW_UNUSED(coord);
-    RW_UNUSED(arg5);
-    RW_UNUSED(arg6);
-    RW_UNUSED(arg7);
-    RW_UNUSED(arg8);
     RW_UNUSED(args);
-    return true;
+    const glm::vec3& curPos = object.m_object->getPosition();
+    glm::vec3 newPos;
+
+    if (curPos == coord) {
+        return true;
+    }
+
+    newPos.x = (curPos.x < coord.x ? curPos.x + arg5 : curPos.x - arg5);
+    newPos.y = (curPos.y < coord.y ? curPos.y + arg6 : curPos.y - arg6);
+    newPos.z = (curPos.z < coord.z ? curPos.z + arg7 : curPos.z - arg7);
+
+    if (arg8) {
+        for (const auto& obj : args.getWorld()->pedestrianPool.objects) {
+            if (glm::distance(newPos, obj.second->getPosition()) <= 2.1f) {
+                return true;
+            }
+        }
+
+        for (const auto& obj : args.getWorld()->vehiclePool.objects) {
+            if (glm::distance(newPos, obj.second->getPosition()) <= 3.61f) {
+                return true;
+            }
+        }
+    }
+
+    object.m_object->setPosition(newPos);
+
+    return (newPos == coord);
 }
 
 /**
