@@ -406,6 +406,12 @@ void VehicleObject::tickPhysics(float dt) {
             }
         }
 
+        if (immobilised) {
+            // An immobilised car should not be able to move on it's own.
+            engineForce = 0.f;
+            brakeF = 5.f;
+        }
+
         for (int w = 0; w < physVehicle->getNumWheels(); ++w) {
             btWheelInfo& wi = physVehicle->getWheelInfo(w);
 
@@ -692,6 +698,14 @@ void VehicleObject::setHandbraking(bool hb) {
 
 bool VehicleObject::getHandbraking() const {
     return handbrake;
+}
+
+void VehicleObject::setImmobilised(bool immobile) {
+    immobilised = immobile;
+}
+
+bool VehicleObject::getImmobilised() const {
+    return immobilised;
 }
 
 void VehicleObject::ejectAll() {

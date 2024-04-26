@@ -373,13 +373,28 @@ bool Activities::Jump::update(CharacterObject *character,
 bool Activities::EnterVehicle::canSkip(CharacterObject *character,
                                        CharacterController *) const {
     // If we're already inside the vehicle, it can't helped.
-    return character->getCurrentVehicle() == nullptr;
+    if (character->getCurrentVehicle() != nullptr) {
+        return false;
+    }
+
+    switch (character->getCurrentCycle())
+    {
+        case AnimCycle::CarOpenLHS:
+        case AnimCycle::CarGetInLHS:
+        case AnimCycle::CarPullOutLHS:
+        case AnimCycle::CarOpenRHS:
+        case AnimCycle::CarGetInRHS:
+        case AnimCycle::CarPullOutRHS:
+            return false;
+        default:
+            return true;
+    }
 }
 
 bool Activities::EnterVehicle::update(CharacterObject *character,
                                       CharacterController *controller) {
     constexpr float kSprintToEnterDistance = 5.f;
-    constexpr float kGiveUpDistance = 100.f;
+    constexpr float kGiveUpDistance = 50.f;
 
     RW_UNUSED(controller);
 
@@ -424,6 +439,7 @@ bool Activities::EnterVehicle::update(CharacterObject *character,
     bool tryToEnter = false;
 
     if (entering) {
+        character->setPosition(entryPos);
         if (character->getCurrentCycle() == cycle_open) {
             if (character->animator->isCompleted(AnimIndexAction)) {
                 tryToEnter = true;
@@ -432,7 +448,6 @@ bool Activities::EnterVehicle::update(CharacterObject *character,
                            0.5f) {
                 vehicle->setPartTarget(entryDoor, true, entryDoor->openAngle);
             } else {
-                // character->setPosition(vehicle->getSeatEntryPosition(seat));
                 character->rotation = vehicle->getRotation();
             }
         } else if (character->getCurrentCycle() == cycle_pullout) {
@@ -443,6 +458,7 @@ bool Activities::EnterVehicle::update(CharacterObject *character,
             if (character->animator->isCompleted(AnimIndexAction)) {
                 /// @todo move to a more suitable place
                 vehicle->grantOccupantRewards(character);
+                vehicle->setImmobilised(false);
 
                 // VehicleGetIn is over, finish activity
                 return true;
@@ -455,6 +471,7 @@ bool Activities::EnterVehicle::update(CharacterObject *character,
         float targetDistance = glm::length(targetDirection);
 
         if (targetDistance <= 0.4f) {
+            character->setPosition(entryPos);
             entering = true;
             // Warp character to vehicle orientation
             character->controller->setMoveDirection({0.f, 0.f, 0.f});
@@ -495,6 +512,8 @@ bool Activities::EnterVehicle::update(CharacterObject *character,
 
             currentOccupant->controller->setNextActivity(
                 std::make_unique<Activities::ExitVehicle>(true));
+
+            vehicle->setImmobilised(true);
         } else {
             character->playCycle(cycle_enter);
             character->enterVehicle(vehicle, seat);
@@ -528,7 +547,7 @@ bool Activities::ExitVehicle::update(CharacterObject *character,
 
             character->rotation = vehicle->getRotation();
 
-            // Exit the vehicle immediatley
+            // Exit the vehicle immediately
             character->enterVehicle(nullptr, seat);
             character->setPosition(exitPos);
 

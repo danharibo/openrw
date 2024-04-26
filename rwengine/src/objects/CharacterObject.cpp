@@ -492,14 +492,12 @@ bool CharacterObject::enterVehicle(VehicleObject* vehicle, size_t seat) {
             // enterAction(VehicleSit);
             return true;
         }
-    } else {
-        if (currentVehicle) {
-            currentVehicle->setOccupant(seat, nullptr);
-            // Disabled due to crashing.
-            // setPosition(currentVehicle->getPosition());
-            setCurrentVehicle(nullptr, 0);
-            return true;
-        }
+    } else if (currentVehicle) {
+        currentVehicle->setOccupant(seat, nullptr);
+        // Disabled due to crashing.
+        // setPosition(currentVehicle->getPosition());
+        setCurrentVehicle(nullptr, 0);
+        return true;
     }
     return false;
 }

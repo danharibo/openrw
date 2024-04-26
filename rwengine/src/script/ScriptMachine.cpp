@@ -133,7 +133,7 @@ void ScriptMachine::executeThread(SCMThread& t, int msPassed) {
                 if (a.type == SCMType::TString) {
                     printf(" %1x:'%s'", a.type, a.string);
                 } else if (a.type == SCMType::TFloat16) {
-                    printf(" %1x:%f", a.type, a.realValue());
+                    printf(" %1x:%f", a.type, static_cast<float>(a.realValue()));
                 } else {
                     printf(" %1x:%d", a.type, a.integerValue());
                 }

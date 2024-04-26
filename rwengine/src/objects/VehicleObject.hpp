@@ -45,6 +45,7 @@ private:
     float throttle{0.f};
     float brake{0.f};
     bool handbrake = true;
+    bool immobilised = false;
     std::vector<btScalar> wheelsRotation;
 
     Atomic* chassishigh_ = nullptr;
@@ -146,6 +147,10 @@ public:
     void setHandbraking(bool);
 
     bool getHandbraking() const;
+
+    void setImmobilised(bool);
+
+    bool getImmobilised() const;
 
     void tick(float dt) override;
 
