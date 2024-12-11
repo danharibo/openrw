@@ -1,8 +1,10 @@
 #ifndef _RWENGINE_TRAFFICDIRECTOR_HPP_
 #define _RWENGINE_TRAFFICDIRECTOR_HPP_
 
-#include <vector>
 #include <cstddef>
+#include <cstdint>
+#include <string>
+#include <vector>
 
 class GameWorld;
 class GameObject;
@@ -23,6 +25,11 @@ public:
                                                  float radius);
 
     void setDensity(NodeType type, float density);
+
+    /**
+     * Put the right pedestrian inside the car
+     */
+    uint16_t assignDriver(const std::string &vehiclename);
 
     /**
      * Creates new traffic at available locations.

@@ -3,11 +3,11 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
+#include <string>
 
 #include "ai/AIGraph.hpp"
 #include "ai/AIGraphNode.hpp"
@@ -93,6 +93,19 @@ void TrafficDirector::setDensity(ai::NodeType type, float density) {
     }
 }
 
+uint16_t TrafficDirector::assignDriver(const std::string &vehiclename) {
+    enum ped_types { COP = 1, MEDIC = 5, FIREMAN = 6 };
+    if (vehiclename == "POLICAR") {
+        return COP;
+    } else if (vehiclename == "AMBULAN") {
+        return MEDIC;
+    } else if (vehiclename == "FIRETRUK") {
+        return FIREMAN;
+    } else {
+        return 0;
+    }
+}
+
 std::vector<GameObject*> TrafficDirector::populateNearby(
     const ViewCamera& camera, float radius, int maxSpawn) {
 
@@ -133,6 +146,7 @@ std::vector<GameObject*> TrafficDirector::populateNearby(
 
     // Hardcoded cop Pedestrian
     std::vector<uint16_t> peds = {1};
+    uint16_t pedId;
 
     // Determine which zone the viewpoint is in
     auto zone = world->data->findZoneAt(camera.position);
@@ -170,8 +184,7 @@ std::vector<GameObject*> TrafficDirector::populateNearby(
             counter--;
 
             // Spawn a pedestrian from the available pool
-            const auto pedId =
-                peds.at(world->getRandomNumber(0u, peds.size() - 1));
+            pedId = peds.at(world->getRandomNumber(0u, peds.size() - 1));
             auto ped = world->createPedestrian(pedId, spawn->position);
             ped->applyOffset();
             ped->setLifetime(GameObject::TrafficLifetime);
@@ -244,9 +257,14 @@ std::vector<GameObject*> TrafficDirector::populateNearby(
             vehicle->setHandbraking(false);
 
             // Spawn a pedestrian and put it into the vehicle
-            const auto pedId =
-                peds.at(world->getRandomNumber(0u, peds.size() - 1));
-            CharacterObject* character = world->createPedestrian(pedId, vehicle->getPosition());
+            pedId = TrafficDirector::assignDriver(
+                vehicle->getVehicle()->vehiclename_);
+            if (pedId == 0) {
+                // not an special car, random person in
+                pedId = peds.at(world->getRandomNumber(0u, peds.size() - 1));
+            }
+            CharacterObject* character =
+                world->createPedestrian(pedId, vehicle->getPosition());
             character->setLifetime(GameObject::TrafficLifetime);
             character->setCurrentVehicle(vehicle, 0);
             character->controller->setGoal(CharacterController::TrafficDriver);
